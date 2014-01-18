@@ -9,21 +9,30 @@
         return typeof value === 'function';
     };
 
+    Hooray.isObject = function(value) {
+        return typeof value === 'object';
+    };
+
     Hooray.isUndefined = function(value) {
         return typeof value === 'undefined';
     };
 
-    Hooray.Namespace = function (nsString) {
-        var parts = nsString.split('.'),
-            parent = Hooray,
+    Hooray.Namespace = function (nsString, parentNs) {
+        var parts   = nsString.split('.'),
+            parent  = (parentNs) ? W[parentNs] : Hooray,
+            global  = (parentNs) ? parentNs : HOORAY,
             i;
 
-        if (parts[0] === HOORAY) {
+        if (Hooray.isUndefined(parent)) {
+            parent = {};
+            W[parentNs] = parent;
+        }
+
+        if (parts[0] === global) {
             parts = parts.slice(1);
         }
 
         for (i = 0; i < parts.length; i++) {
-
             if (Hooray.isUndefined(parent[parts[i]])) {
                 parent[parts[i]] = {};
             }

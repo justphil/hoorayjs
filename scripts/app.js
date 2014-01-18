@@ -15,6 +15,16 @@ $(function() {
 
     context.fillRect(0, 0, 100, 100);
 
+    var x = 0,
+        y = 0;
+
+    function tick(a, b, c) {
+        console.log(a, b, c);
+        context.fillRect(++x, ++y, 100, 100);
+        requestAnimationFrame(tick);
+    }
+
+    requestAnimationFrame(tick);
 
     /*context.beginPath(); // Start the path
     context.moveTo(40, 40); // Set the path origin
