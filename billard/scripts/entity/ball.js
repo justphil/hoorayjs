@@ -9,11 +9,15 @@ Billard.Ball = Hooray.Class({
         this.id             = id;
         this.x              = x;
         this.y              = y;
-        this.vX             = 1;
+        this.vX             = 10;
         this.vY             = 0;
         this.radius         = radius;
         this.circleRadius   = radius * 0.4;
         this.color          = color;
+        this.mass           = 3;
+        this.angularAccelerationDenominator = (2/5) * this.mass * (this.radius * this.radius);
+
+        this.vAngular       = 0;
         this.theta          = 0;
         this.phi            = 0;
         this.rotation       = 0;
@@ -28,6 +32,98 @@ Billard.Ball = Hooray.Class({
             console.log('[Ball] ball circle image loaded!');
         };
     },
+
+    getVelocityAngle: function() {
+        return Math.atan2(this.vY, this.vX);
+    },
+
+    getSquaredVelocity: function() {
+        return this.vX * this.vX + this.vY * this.vY;
+    },
+
+    getVelocity: function(squaredVelocity) {
+        var sv = (Hooray.isUndefined(squaredVelocity)) ? this.getSquaredVelocity() : squaredVelocity;
+        return Math.sqrt(sv);
+    },
+
+    isPerfectlyRotating: function(velocity) {
+        var v = (Hooray.isUndefined(velocity)) ? this.getVelocity() : velocity;
+        return this.vAngular * this.radius >= v;
+    },
+
+    applyTranslation: function() {
+        this.x += this.vX;
+        this.y += this.vY;
+    },
+
+    applyAbsoluteFriction: function(absoluteFriction, velocity, velocityAngle) {
+        var v       = (Hooray.isUndefined(velocity)) ? this.getVelocity() : velocity;
+        var vAngle  = (Hooray.isUndefined(velocityAngle)) ? this.getVelocityAngle() : velocityAngle;
+
+        if (v > absoluteFriction) {
+            v -= absoluteFriction;
+        }
+        else {
+            v = 0;
+        }
+
+        this.vX = Math.cos(vAngle) * v;
+        this.vY = Math.sin(vAngle) * v;
+    },
+
+    applyFrictionAsPercentage: function(percentage, stopThreshold) {
+        this.vX *= percentage;
+        this.vY *= percentage;
+
+        if (Math.abs(this.vX) < stopThreshold) {
+            this.vX = 0;
+        }
+
+        if (Math.abs(this.vY) < stopThreshold) {
+            this.vY = 0;
+        }
+    },
+
+    applyTorque: function(absoluteFriction) {
+        var torque              = absoluteFriction * this.radius;
+        this.vAngular          += torque / this.angularAccelerationDenominator;
+    },
+
+    applyRotation: function(squaredVelocity, velocity, velocityAngle, rotationDelta) {
+        var sv      = (Hooray.isUndefined(squaredVelocity)) ? this.getSquaredVelocity() : squaredVelocity;
+        var v       = (Hooray.isUndefined(velocity)) ? this.getVelocity() : velocity;
+        var alpha   = (Hooray.isUndefined(velocityAngle)) ? this.getVelocityAngle() : velocityAngle;
+        var delta   = (Hooray.isUndefined(rotationDelta)) ? v / this.radius : rotationDelta;
+
+        if (sv > 0) {
+            // Update the ball orientation
+            var sinDelta    = Math.sin(delta),
+                cosDelta    = Math.cos(delta),
+                sinTheta    = Math.sin(this.theta),
+                cosTheta    = Math.cos(this.theta),
+                phiAlpha    = this.phi - alpha,
+                sinPhiAlpha = Math.sin(phiAlpha),
+                cosPhiAlpha = Math.cos(phiAlpha),
+                oldTheta    = this.theta;
+
+            this.phi = alpha + Math.atan2(
+                sinTheta * sinPhiAlpha,
+                sinTheta * cosPhiAlpha * cosDelta + cosTheta * sinDelta
+            );
+
+            this.theta = Math.acos(
+                -sinTheta * cosPhiAlpha * sinDelta + cosTheta * cosDelta
+            );
+
+            if (this.theta > oldTheta) {
+                this.rotation = 0;
+            }
+            else {
+                this.rotation = 1;
+            }
+        }
+    },
+
     draw: function(context) {
         context.save();
         context.translate(this.x, this.y);

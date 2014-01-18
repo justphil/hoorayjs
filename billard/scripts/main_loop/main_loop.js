@@ -5,13 +5,52 @@ Hooray.Namespace('Billard', 'Billard');
 Billard.MainLoop = Hooray.Class({
     init: function(pubSub) {
         this.pubSub = pubSub;
+
+        this.frictionCoefficientBillard = 0.2;
+        this.gravitationalConstant = 9.81;
     },
+
     execute: function(context, drawables, pubSub, canvasWidth, canvasHeight, timestamp) {
         //pubSub.publish('foo', {one: 1, two: 2, three: 3});
 
         var testBall = drawables['testBall'];
 
+        var generalFrictionFactor = 0.99;
 
+        var currentVelocitySquared  = testBall.getSquaredVelocity();
+        var currentVelocity         = testBall.getVelocity(currentVelocitySquared);
+        var vAngle                  = testBall.getVelocityAngle();
+
+        // check condition for perfect ball rotation/rolling
+        if (testBall.isPerfectlyRotating(currentVelocity)) {
+            generalFrictionFactor = 0.99;
+
+            // apply perfect ball rotation/rolling
+            testBall.applyRotation(currentVelocitySquared, currentVelocity, vAngle);
+        }
+        else {
+
+            generalFrictionFactor = 1;
+
+            // apply sliding friction
+            //var frictionForce = this.frictionCoefficientBillard * testBall.mass * this.gravitationalConstant;
+            var friction = 0.1;
+            testBall.applyAbsoluteFriction(friction, currentVelocity, vAngle);
+
+
+            // due to sliding friction we need to apply the corresponding torque
+            // apply torque (Drehmoment) and resulting angular acceleration
+            testBall.applyTorque(friction);
+
+            testBall.applyRotation(currentVelocitySquared, currentVelocity, vAngle, testBall.vAngular);
+
+        }
+
+        // apply general friction
+        testBall.applyFrictionAsPercentage(generalFrictionFactor, 0.022);
+
+
+        testBall.applyTranslation();
 
         // collision with left/right wall
         if (testBall.x + testBall.radius >= canvasWidth) {
@@ -37,33 +76,5 @@ Billard.MainLoop = Hooray.Class({
             testBall.collision = !testBall.collision;
         }
 
-        // 2d movement
-        testBall.x += testBall.vX;
-        testBall.y += testBall.vY;
-
-        // ball rotation
-        var ds2 = testBall.vX * testBall.vX + testBall.vY * testBall.vY;
-        if (ds2 > 0) {
-            // Update the ball orientation
-            var delta = Math.sqrt(ds2) / testBall.radius;
-            var sinDelta = Math.sin(delta);
-            var cosDelta = Math.cos(delta);
-            var alpha = Math.atan2(testBall.vY, testBall.vX);
-            var sinTheta = Math.sin(testBall.theta);
-            var cosTheta = Math.cos(testBall.theta);
-            var phiAlpha = testBall.phi - alpha;
-            var sinPhiAlpha = Math.sin(phiAlpha);
-            var cosPhiAlpha = Math.cos(phiAlpha);
-            var oldTheta = testBall.theta;
-            testBall.phi = alpha + Math.atan2(sinTheta * sinPhiAlpha, sinTheta * cosPhiAlpha * cosDelta + cosTheta * sinDelta);
-            testBall.theta = Math.acos(-sinTheta * cosPhiAlpha * sinDelta + cosTheta * cosDelta);
-
-            if (testBall.theta > oldTheta) {
-                testBall.rotation = 0;
-            }
-            else {
-                testBall.rotation = 1;
-            }
-        }
     }
 });

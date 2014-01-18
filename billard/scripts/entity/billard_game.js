@@ -47,7 +47,7 @@ Billard.Game = Hooray.Class({
             }
         }
 
-        this.balls['testBall'] = new Billard.Ball('testBall', 500, 30, radius, '#0000FF');
+        this.balls['testBall'] = new Billard.Ball('testBall', 200, 30, radius, '#0000FF');
 
         /*for (var i = 0; i <= 15; i++) {
             ballId = ballIdTpl.replace('#', i);
