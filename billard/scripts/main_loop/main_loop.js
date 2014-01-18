@@ -13,28 +13,27 @@ Billard.MainLoop = Hooray.Class({
     execute: function(context, drawables, pubSub, canvasWidth, canvasHeight, timestamp) {
         //pubSub.publish('foo', {one: 1, two: 2, three: 3});
 
-        var testBall = drawables['testBall'];
-
-        var generalFrictionFactor = 0.99;
-
-        var currentVelocitySquared  = testBall.getSquaredVelocity();
-        var currentVelocity         = testBall.getVelocity(currentVelocitySquared);
-        var vAngle                  = testBall.getVelocityAngle();
+        var testBall                = drawables['testBall'],
+            currentVelocitySquared  = testBall.getSquaredVelocity(),
+            currentVelocity         = testBall.getVelocity(currentVelocitySquared),
+            vAngle                  = testBall.getVelocityAngle(),
+            generalFrictionFactor;
 
         // check condition for perfect ball rotation/rolling
         if (testBall.isPerfectlyRotating(currentVelocity)) {
             generalFrictionFactor = 0.99;
 
             // apply perfect ball rotation/rolling
+            // = angular velocity perfectly corresponds to distance travelled
             testBall.applyRotation(currentVelocitySquared, currentVelocity, vAngle);
         }
         else {
-
+            // here the ball is still sliding and due to sliding friction it progressively starts to rotate
             generalFrictionFactor = 1;
 
             // apply sliding friction
             //var frictionForce = this.frictionCoefficientBillard * testBall.mass * this.gravitationalConstant;
-            var friction = 0.1;
+            var friction = 0.05;
             testBall.applyAbsoluteFriction(friction, currentVelocity, vAngle);
 
 
@@ -47,34 +46,12 @@ Billard.MainLoop = Hooray.Class({
         }
 
         // apply general friction
-        testBall.applyFrictionAsPercentage(generalFrictionFactor, 0.022);
+        testBall.applyFrictionAsPercentage(generalFrictionFactor, 0.045);
 
 
         testBall.applyTranslation();
 
-        // collision with left/right wall
-        if (testBall.x + testBall.radius >= canvasWidth) {
-            testBall.x = canvasWidth - testBall.radius;
-            testBall.vX *= -1;
-            testBall.collision = !testBall.collision;
-        }
-        else if (testBall.x - testBall.radius <= 0) {
-            testBall.x = testBall.radius;
-            testBall.vX *= -1;
-            testBall.collision = !testBall.collision;
-        }
-
-        // collision with upper/lower wall
-        if (testBall.y + testBall.radius >= canvasHeight) {
-            testBall.y = canvasHeight - testBall.radius;
-            testBall.vY *= -1;
-            testBall.collision = !testBall.collision;
-        }
-        else if (testBall.y - testBall.radius <= 0) {
-            testBall.y = testBall.radius;
-            testBall.vY *= -1;
-            testBall.collision = !testBall.collision;
-        }
+        testBall.handleCushionCollisions(0, canvasWidth, 0, canvasHeight);
 
     }
 });
