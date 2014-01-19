@@ -4,11 +4,13 @@ Hooray.Namespace('Billard', 'Billard');
 
 Billard.Ball = Hooray.Class({
     init: function(id, x, y, radius, color) {
+        this.i = 0;
+
         this.id             = id;
         this.x              = x;
         this.y              = y;
-        this.vX             = 10;
-        this.vY             = 0;
+        this.vX             = 0;
+        this.vY             = 10;
         this.radius         = radius;
         this.circleRadius   = radius * 0.4;
         this.color          = color;
@@ -18,8 +20,6 @@ Billard.Ball = Hooray.Class({
         this.vAngular       = 0;
         this.theta          = 0;
         this.phi            = 0;
-        this.rotation       = 0;
-        this.collision      = false;
 
         this.image          = new Image();
         this.imageLoaded    = false;
@@ -101,8 +101,7 @@ Billard.Ball = Hooray.Class({
                 cosTheta    = Math.cos(this.theta),
                 phiAlpha    = this.phi - alpha,
                 sinPhiAlpha = Math.sin(phiAlpha),
-                cosPhiAlpha = Math.cos(phiAlpha),
-                oldTheta    = this.theta;
+                cosPhiAlpha = Math.cos(phiAlpha);
 
             this.phi = alpha + Math.atan2(
                 sinTheta * sinPhiAlpha,
@@ -112,13 +111,6 @@ Billard.Ball = Hooray.Class({
             this.theta = Math.acos(
                 -sinTheta * cosPhiAlpha * sinDelta + cosTheta * cosDelta
             );
-
-            if (this.theta > oldTheta) {
-                this.rotation = 0;
-            }
-            else {
-                this.rotation = 1;
-            }
         }
     },
 
@@ -127,24 +119,20 @@ Billard.Ball = Hooray.Class({
         if (this.x + this.radius >= right) {
             this.x = right - this.radius;
             this.vX *= -1;
-            this.collision = !this.collision;
         }
         else if (this.x - this.radius <= left) {
             this.x = this.radius;
             this.vX *= -1;
-            this.collision = !this.collision;
         }
 
         // collision with upper/lower wall
         if (this.y + this.radius >= bottom) {
             this.y = bottom - this.radius;
             this.vY *= -1;
-            this.collision = !this.collision;
         }
         else if (this.y - this.radius <= top) {
             this.y = this.radius;
             this.vY *= -1;
-            this.collision = !this.collision;
         }
     },
 
@@ -171,10 +159,10 @@ Billard.Ball = Hooray.Class({
         context.translate(translateX, translateY);
         // Compress the coordinates by cosTheta in the direction between the center of the white circle and the center of the ball
 
-        var rotate = this.phi + this.rotation * Math.PI;
-        if (this.collision) {
-            rotate += Math.PI;
-        }
+        // Due to the maths behind phi it may appear that its value is a multiple of its real value.
+        // Therefore we kind of normalize phi by this statement in order to prevent 180° flipping effects
+        // of the number texture.
+        var rotate = this.phi % Math.PI;
 
         context.rotate(rotate);
 
@@ -210,15 +198,16 @@ Billard.Ball = Hooray.Class({
 
         this.drawMainCircle(context);
 
-        /*if (this.i % 15 === 0) {
+        /*if (this.i % 30 === 0 && (Math.abs(this.vX) > 0 || Math.abs(this.vY) > 0)) {
             console.log('['+this.i+'] t -> ', this.theta * (180/Math.PI), this.theta);
             console.log('['+this.i+'] p -> ', this.phi * (180/Math.PI), this.phi);
-            console.log('['+this.i+'] r -> ', this.rotation);
         }*/
 
         // small white circle
         this.drawFaceCircles(context, this.theta);
 
         context.restore();
+
+        this.i++;
     }
 });
