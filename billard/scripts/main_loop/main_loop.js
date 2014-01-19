@@ -21,7 +21,7 @@ Billard.MainLoop = Hooray.Class({
 
         // check condition for perfect ball rotation/rolling
         if (testBall.isPerfectlyRotating(currentVelocity)) {
-            generalFrictionFactor = 0.99;
+            generalFrictionFactor = 0.992;
 
             // apply perfect ball rotation/rolling
             // = angular velocity perfectly corresponds to distance travelled
@@ -33,7 +33,7 @@ Billard.MainLoop = Hooray.Class({
 
             // apply sliding friction
             //var frictionForce = this.frictionCoefficientBillard * testBall.mass * this.gravitationalConstant;
-            var friction = 0.05;
+            var friction = 0.055;
             testBall.applyAbsoluteFriction(friction, currentVelocity, vAngle);
 
 
@@ -46,7 +46,7 @@ Billard.MainLoop = Hooray.Class({
         }
 
         // apply general friction
-        testBall.applyFrictionAsPercentage(generalFrictionFactor, 0.045);
+        testBall.applyFrictionAsPercentage(generalFrictionFactor, 0.047);
 
 
         testBall.applyTranslation();
